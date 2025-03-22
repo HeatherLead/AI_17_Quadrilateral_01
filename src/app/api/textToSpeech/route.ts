@@ -5,6 +5,7 @@ export const POST = async (request: NextRequest) => {
     try {
         const DID_API_KEY = process.env.DID_API_KEY;
         const { text, style, avatarUrl, language } = await request.json();
+        console.log(text, style, avatarUrl, language);
 
         const creationResponse = await axios.post(
             "https://api.d-id.com/talks",
@@ -30,6 +31,7 @@ export const POST = async (request: NextRequest) => {
         );
 
         const { id } = creationResponse.data;
+        console.log(id);
 
         async function checkStatus(videoId: string) {
             const MAX_RETRIES = 10;
@@ -48,6 +50,7 @@ export const POST = async (request: NextRequest) => {
                 console.log(`Attempt ${attempt + 1}: Status - ${statusResponse.data.status}`);
 
                 if (statusResponse.data.status === "done") {
+                    console.log(statusResponse.data.result_url);
                     return statusResponse.data.result_url;
                 }
             }

@@ -41,7 +41,7 @@ export default function AIVoiceInputDemo() {
   const generateVideo = async (text: string) => {
     try {
       const videoResult = await axios.post("/api/textToSpeech", {
-        response: text,
+        text,
         style,
         avatarUrl: avatar.image,
         language: avatar.voices[language],
@@ -110,8 +110,12 @@ export default function AIVoiceInputDemo() {
               </div>
             }
           >
-            <div className="w-44 h-44 border rounded-full overflow-hidden border-gray-500 dark:border-white">
-              <video className="w-60 h-60 rounded-full" src={video} autoPlay />
+            <div className="w-44 h-44 border rounded-full border-gray-500 dark:border-white">
+              <video
+                className="w-44 h-44 object-cover rounded-full"
+                src={video}
+                autoPlay
+              />
             </div>
           </Suspense>
         </div>
@@ -200,7 +204,7 @@ export default function AIVoiceInputDemo() {
           placeholder="What's on your mind?"
           value={transcript}
           onChange={(e) => setTranscript(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
         />
       </div>
       <div className="w-full p-4 border rounded-lg">
