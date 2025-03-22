@@ -17,6 +17,7 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
+import { LoaderCircle } from "lucide-react";
 
 interface AvatarType {
   id: number;
@@ -33,6 +34,8 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   videoUrl?: string;
+  isLoading?: boolean;
+  isVideoLoaded?: boolean;
 }
 
 export default function AIVoiceInputDemo() {
@@ -44,6 +47,7 @@ export default function AIVoiceInputDemo() {
   const [isRecording, setIsRecording] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
   const style = Styles.cheerful;
 
   const generateVideo = async (text: string) => {
@@ -64,13 +68,37 @@ export default function AIVoiceInputDemo() {
     }
   };
 
+  const handleVideoClick = (videoElement: HTMLVideoElement) => {
+    videoElement.currentTime = 0;
+    videoElement.play();
+  };
+
+  const handleVideoLoad = (messageIndex: number) => {
+    setMessages((prev) =>
+      prev.map((msg, idx) =>
+        idx === messageIndex ? { ...msg, isVideoLoaded: true } : msg
+      )
+    );
+  };
+
   const fetchAIResponse = useCallback(
     async (text: string) => {
       if (!text.trim()) return;
 
       setIsLoading(true);
+      setIsLoadingResponse(true);
       try {
         setMessages((prev) => [...prev, { role: "user", content: text }]);
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Loading...",
+            isLoading: true,
+            isVideoLoaded: false,
+          },
+        ]);
 
         const res = await axios.post("/api/gemini", {
           prompt: text,
@@ -82,22 +110,26 @@ export default function AIVoiceInputDemo() {
 
         const aiResponse = res.data.text;
         setResponse(aiResponse);
+
         const videoUrl = await generateVideo(aiResponse);
+
         setMessages((prev) => [
-          ...prev,
+          ...prev.filter((msg) => !msg.isLoading),
           {
             role: "assistant",
             content: aiResponse,
             videoUrl,
+            isVideoLoaded: false,
           },
         ]);
+
         setTranscript("");
         setVideo("/");
       } catch (error) {
         console.error("Error fetching AI response:", error);
         setResponse("Error generating response.");
         setMessages((prev) => [
-          ...prev,
+          ...prev.filter((msg) => !msg.isLoading),
           {
             role: "assistant",
             content:
@@ -106,6 +138,7 @@ export default function AIVoiceInputDemo() {
         ]);
       } finally {
         setIsLoading(false);
+        setIsLoadingResponse(false);
       }
     },
     [language, avatar]
@@ -145,28 +178,53 @@ export default function AIVoiceInputDemo() {
               message.role === "user" ? "justify-end" : "justify-start flex-col"
             }`}
           >
-            {message.videoUrl && (
-              <div className="mb-2">
-                <video
-                  className="ml-4 w-36 h-36 object-cover rounded-full"
-                  src={message.videoUrl}
-                  autoPlay
-                  onError={(e) => {
-                    console.error("Video playback error:", e);
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
+            {message.role === "assistant" &&
+            (message.isLoading ||
+              (message.videoUrl && !message.isVideoLoaded)) ? (
+              <div className="flex items-center gap-2 bg-gray-950 rounded-lg p-4">
+                <LoaderCircle className="w-5 h-5 animate-spin" />
+                <span className="text-sm">
+                  {message.isLoading
+                    ? "Generating response..."
+                    : "Loading video..."}
+                </span>
               </div>
+            ) : (
+              <>
+                {message.videoUrl && (
+                  <div className="mb-2">
+                    <Suspense
+                      fallback={
+                        <div>
+                          <LoaderCircle className="w-20 h-20 text-white animate-spin" />
+                        </div>
+                      }
+                    >
+                      <video
+                        className="ml-4 w-36 h-36 object-cover rounded-full cursor-pointer"
+                        src={message.videoUrl}
+                        autoPlay
+                        onClick={(e) => handleVideoClick(e.currentTarget)}
+                        onLoadedData={() => handleVideoLoad(index)}
+                        onError={(e) => {
+                          console.error("Video playback error:", e);
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    </Suspense>
+                  </div>
+                )}
+                <div
+                  className={`max-w-[60%] text-wrap rounded-lg p-2 flex-col ${
+                    message.role === "user"
+                      ? "bg-[#8B3DFF] text-gray-100 ml-4"
+                      : "bg-gray-950 mr-4"
+                  }`}
+                >
+                  <div className="text-sm">{message.content}</div>
+                </div>
+              </>
             )}
-            <div
-              className={`max-w-[60%] text-wrap rounded-lg p-2 flex-col ${
-                message.role === "user"
-                  ? "bg-[#8B3DFF] text-gray-100 ml-4"
-                  : "bg-black  mr-4"
-              }`}
-            >
-              {<div className=" text-sm">{message.content}</div>}
-            </div>
           </div>
         ))}
       </div>
