@@ -4,18 +4,18 @@ import axios from "axios";
 export const POST = async (request: NextRequest) => {
     try {
         const DID_API_KEY = process.env.DID_API_KEY;
-        const { text, style, avatar } = await request.json();
+        const { text, style, avatarUrl, language } = await request.json();
 
         const creationResponse = await axios.post(
             "https://api.d-id.com/talks",
             {
-                source_url: avatar.image,
+                source_url: avatarUrl,
                 script: {
                     type: "text",
                     input: text,
                     provider: {
                         type: "microsoft",
-                        voice_id: avatar.voice,
+                        voice_id: language,
                         voice_config: { style }
                     }
                 },

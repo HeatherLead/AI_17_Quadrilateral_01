@@ -1,22 +1,34 @@
-export const Avatars = [
+interface Avatar {
+    id: number;
+    name: string;
+    image: string;
+    voices: {
+        en: string;
+        hi: string;
+        mr: string;
+    };
+}
+export const Avatars : Avatar[] = [
     {
         id: 1,
-        name: "aashi",
-        image: "https://res.cloudinary.com/heatherlead/image/upload/v1742641320/ft6muoalremyzvtz7epg.png",
-        voice: "en-IN-AashiNeural",
+        name: "ananya",
+        image: "https://res.cloudinary.com/heatherlead/image/upload/v1742641320/on4n4nma5nkvsigjjry1.png",
+        voices: {
+            en: "en-IN-AnanyaNeural",
+            hi: "hi-IN-AnanyaNeural",
+            mr: "mr-IN-AarohiNeural",
+        },
     },
     {
         id: 2,
         name: "kunal",
         image: "https://res.cloudinary.com/heatherlead/image/upload/v1742641320/wv762gdi8slwikbyf77p.png",
-        voice: "en-IN-KunalNeural",
+        voices: {
+            en: "en-IN-KunalNeural",
+            hi: "hi-IN-KunalNeural",
+            mr: "mr-IN-ManoharNeural",
+        },
     },
-    {
-        id: 2,
-        name: "ananya",
-        image: "https://res.cloudinary.com/heatherlead/image/upload/v1742641320/on4n4nma5nkvsigjjry1.png",
-        voice: "en-IN-AnanyaNeural",
-    }
 ];
 
 export const Styles = {
