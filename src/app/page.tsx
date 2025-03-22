@@ -9,7 +9,7 @@ export default function RootPage() {
   const userId = useAuth();
   useEffect(() => {
     if (userId) {
-      redirect("/home");
+      redirect("/chat");
     }
   }, []);
   return (
