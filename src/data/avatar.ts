@@ -1,0 +1,58 @@
+export const Avatars = [
+    {
+        id: 1,
+        name: "aashi",
+        image: "https://res.cloudinary.com/heatherlead/image/upload/v1742641320/ft6muoalremyzvtz7epg.png",
+        voice: "en-IN-AashiNeural",
+    },
+    {
+        id: 2,
+        name: "kunal",
+        image: "https://res.cloudinary.com/heatherlead/image/upload/v1742641320/wv762gdi8slwikbyf77p.png",
+        voice: "en-IN-KunalNeural",
+    },
+    {
+        id: 2,
+        name: "ananya",
+        image: "https://res.cloudinary.com/heatherlead/image/upload/v1742641320/on4n4nma5nkvsigjjry1.png",
+        voice: "en-IN-AnanyaNeural",
+    }
+];
+
+export const Styles = {
+    advertisementUpbeat: "advertisement_upbeat",
+    affectionate: "affectionate",
+    angry: "angry",
+    assistant: "assistant",
+    calm: "calm",
+    chat: "chat",
+    cheerful: "cheerful",
+    customerService: "customerservice",
+    depressed: "depressed",
+    disgruntled: "disgruntled",
+    documentaryNarration: "documentary-narration",
+    embarrassed: "embarrassed",
+    empathetic: "empathetic",
+    envious: "envious",
+    excited: "excited",
+    fearful: "fearful",
+    friendly: "friendly",
+    gentle: "gentle",
+    hopeful: "hopeful",
+    lyrical: "lyrical",
+    narrationProfessional: "narration-professional",
+    narrationRelaxed: "narration-relaxed",
+    newscast: "newscast",
+    newscastCasual: "newscast-casual",
+    newscastFormal: "newscast-formal",
+    poetryReading: "poetry-reading",
+    sad: "sad",
+    serious: "serious",
+    shouting: "shouting",
+    sportsCommentary: "sports_commentary",
+    sportsCommentaryExcited: "sports_commentary_excited",
+    whispering: "whispering",
+    terrified: "terrified",
+    unfriendly: "unfriendly",
+};
+  
