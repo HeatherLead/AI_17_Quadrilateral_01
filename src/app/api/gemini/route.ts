@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
-const MODEL_ID = "tunedModels/idmsinfotecherp-felf1vlm8k4p";
+const MODEL_ID = "tunedModels/erpqueriesfinetuning500-78yndkjw5iza";
 
+// Store chat history (Temporary: Use a database in production)
 const chatHistory: { role: "user" | "model"; content: string }[] = [];
 
 export async function POST(req: Request) {
