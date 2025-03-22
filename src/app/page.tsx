@@ -17,7 +17,7 @@ export default function RootPage() {
       <Suspense fallback={<div className="text-white">Loading...</div>}>
         <main className="w-screen h-screen z-20 overflow-hidden">
           <Spline
-            scene="https://prod.spline.design/azAhVF9QLiK-9oJ0/scene.splinecode"
+            scene="https://prod.spline.design/ZP27cyW1kbOob5QI/scene.splinecode"
             onError={(error) => console.log("Spline error:", error)}
           />
         </main>
