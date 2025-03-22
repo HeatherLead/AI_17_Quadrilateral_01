@@ -33,9 +33,7 @@ export default function AIVoiceInputDemo() {
   const [transcript, setTranscript] = useState("");
   const [response, setResponse] = useState("");
 
-  const [outputText, setOutputText] = useState(
-    "A solution to reduce API polling inefficiency is using webhooks..."
-  );
+  const [outputText, setOutputText] = useState("");
   const [language, setLanguage] = useState<"en" | "hi" | "mr">("en");
   const [avatar, setAvatar] = useState<AvatarType>(Avatars[0]);
   const [video, setVideo] = useState("/");
@@ -61,6 +59,7 @@ export default function AIVoiceInputDemo() {
     setTranscript(updatedTranscript);
 
     try {
+      ``;
       const res = await axios.post("/api/gemini", {
         prompt: "how can i get my gst bill",
       });
