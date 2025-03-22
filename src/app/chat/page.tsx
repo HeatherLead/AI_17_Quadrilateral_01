@@ -3,7 +3,7 @@
 import { AIVoiceInput } from "@/components/ui/ai-voice-input";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense, useEffect, useCallback } from "react";
 import { Styles, Avatars } from "@/data/avatar";
 import {
   DropdownMenu,
@@ -32,43 +32,66 @@ interface AvatarType {
 export default function AIVoiceInputDemo() {
   const [transcript, setTranscript] = useState("");
   const [response, setResponse] = useState("");
-
-  const [outputText, setOutputText] = useState("");
   const [language, setLanguage] = useState<"en" | "hi" | "mr">("en");
   const [avatar, setAvatar] = useState<AvatarType>(Avatars[0]);
   const [video, setVideo] = useState("/");
+  const [isRecording, setIsRecording] = useState(false);
   const style = Styles.cheerful;
 
-  const generateVideo = async () => {
-    const response = await axios.post("/api/textToSpeech", {
-      outputText,
-      style,
-      avatarUrl: avatar.image,
-      language: avatar.voices[language],
-    });
-    const { videoUrl } = response.data;
-    setVideo(videoUrl);
-  };
-
-  const handleStart = () => {
-    console.log("Recording started");
-  };
-
-  const handleTranscript = async (text: string) => {
-    const updatedTranscript = text;
-    setTranscript(updatedTranscript);
-
+  const generateVideo = async (text: string) => {
     try {
-      ``;
-      const res = await axios.post("/api/gemini", {
-        prompt: "how can i get my gst bill",
+      const videoResult = await axios.post("/api/textToSpeech", {
+        response: text,
+        style,
+        avatarUrl: avatar.image,
+        language: avatar.voices[language],
       });
-      setResponse(res.data.text);
+      const { videoUrl } = videoResult.data;
+      setVideo(videoUrl);
     } catch (error) {
-      console.error("Error fetching AI response:", error);
-      setResponse("Error generating response.");
+      console.error("Error generating video:", error);
     }
   };
+
+  const fetchAIResponse = useCallback(
+    async (text: string) => {
+      try {
+        const res = await axios.post("/api/gemini", {
+          prompt: text,
+        });
+        const aiResponse = res.data.text;
+        setResponse(aiResponse);
+        await generateVideo(aiResponse);
+      } catch (error) {
+        console.error("Error fetching AI response:", error);
+        setResponse("Error generating response.");
+      }
+    },
+    [language, avatar]
+  );
+
+  const handleTranscript = (text: string, recording: boolean) => {
+    setTranscript(text);
+    setIsRecording(recording);
+  };
+
+  const handleSubmit = () => {
+    if (transcript.trim() && !isRecording) {
+      fetchAIResponse(transcript);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSubmit();
+    }
+  };
+
+  useEffect(() => {
+    if (!isRecording && transcript.trim()) {
+      fetchAIResponse(transcript);
+    }
+  }, [isRecording]);
 
   return (
     <div className="h-[calc(100vh-120px)] p-8 flex flex-col items-center justify-center gap-5">
@@ -76,7 +99,7 @@ export default function AIVoiceInputDemo() {
       <div
         className={`absolute z-10 left-8 top-24 flex gap-10 items-start 
           transition-opacity duration-1000 ease-in-out ${
-            outputText ? "opacity-100" : "opacity-0"
+            response ? "opacity-100" : "opacity-0"
           }`}
       >
         <div>
@@ -87,8 +110,8 @@ export default function AIVoiceInputDemo() {
               </div>
             }
           >
-            <div className="w-44 h-44 border rounded-full border-gray-500 dark:border-white">
-              <video className="w-44 h-44 rounded-full" src={video} autoPlay />
+            <div className="w-44 h-44 border rounded-full overflow-hidden border-gray-500 dark:border-white">
+              <video className="w-60 h-60 rounded-full" src={video} autoPlay />
             </div>
           </Suspense>
         </div>
@@ -104,31 +127,12 @@ export default function AIVoiceInputDemo() {
           after:rounded-full after:border after:border-gray-300 
           after:bottom-[-20px] after:left-[-10%]"
           >
-            {outputText}
+            {response}
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <AIVoiceInput onStart={handleStart} onTranscript={handleTranscript} />
-        <Input
-          className="w-80"
-          placeholder="What's on your mind?"
-          value={transcript}
-          onChange={(e) => setTranscript(e.target.value)}
-        />
-      </div>
-      <div className="w-full p-4 border rounded-lg">
-        <p className="text-gray-700 font-semibold">🎙 Transcript:</p>
-        <p className="text-blue-500">{transcript || "Start speaking..."}</p>
-      </div>
-      <div className="w-full p-4 border rounded-lg">
-        <p className="text-gray-700 font-semibold">🤖 AI Response:</p>
-        <p className="text-green-500">
-          {response || "Waiting for response..."}
-        </p>
-      </div>
-      <div className="absolute right-1 bottom-16">
+      <div className="absolute right-4 top-20">
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Avatar>
@@ -185,6 +189,29 @@ export default function AIVoiceInputDemo() {
             </DropdownMenuSub>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+
+      <div className="space-y-4">
+        <AIVoiceInput
+          onTranscript={(text) => handleTranscript(text, isRecording)}
+        />
+        <Input
+          className="w-80"
+          placeholder="What's on your mind?"
+          value={transcript}
+          onChange={(e) => setTranscript(e.target.value)}
+          onKeyPress={handleKeyPress}
+        />
+      </div>
+      <div className="w-full p-4 border rounded-lg">
+        <p className="text-gray-700 font-semibold">🎙 Transcript:</p>
+        <p className="text-blue-500">{transcript || "Start speaking..."}</p>
+      </div>
+      <div className="w-full p-4 border rounded-lg">
+        <p className="text-gray-700 font-semibold">🤖 AI Response:</p>
+        <p className="text-green-500">
+          {response || "Waiting for response..."}
+        </p>
       </div>
     </div>
   );
