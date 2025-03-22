@@ -27,7 +27,7 @@ export function Header() {
     <header className="border-b relative">
       <div className="flex h-16 items-center px-4 container mx-auto justify-between">
         {/* Left side - Logo */}
-        <Link href="/home" className="flex items-center">
+        <Link href="/t" className="flex items-center">
           <div className="font-bold text-xl">LOGO</div>
         </Link>
 
@@ -44,8 +44,8 @@ export function Header() {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
-              <Link href="/home" className="hover:text-gray-600 transition">
-                Home
+              <Link href="/chat" className="hover:text-gray-600 transition">
+                Chat
               </Link>
               <Link href="/about" className="hover:text-gray-600 transition">
                 About
@@ -97,11 +97,11 @@ export function Header() {
         <div className="lg:hidden absolute top-16 left-0 right-0 bg-white dark:bg-gray-900 border-b z-50">
           <nav className="flex flex-col p-4">
             <Link
-              href="/home"
+              href="/chat"
               className="py-2 hover:text-gray-600 transition"
               onClick={() => setIsMenuOpen(false)}
             >
-              Home
+             Chat
             </Link>
             <Link
               href="/about"
