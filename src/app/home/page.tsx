@@ -9,7 +9,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!userId) {
-      redirect("/sign-in");
+      redirect("/");
     }
   }, [userId]);
 
