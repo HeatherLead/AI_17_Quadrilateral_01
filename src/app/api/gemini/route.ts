@@ -2,11 +2,10 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
-const MODEL_ID = "tunedModels/erpqueriesfinetuning500-i7ycwojrvr70";
-
+const MODEL_ID = "tunedModels/erpqueriesfinetuning500-78yndkjw5iza";
 
 // Store chat history (Temporary: Use a database in production)
-const chatHistory: { role: "user" | "assistant"; content: string }[] = [];
+const chatHistory: { role: "user" | "model"; content: string }[] = [];
 
 export async function POST(req: Request) {
   try {
@@ -34,7 +33,7 @@ export async function POST(req: Request) {
 
     // Update chat history
     chatHistory.push({ role: "user", content: prompt });
-    chatHistory.push({ role: "assistant", content: responseText });
+    chatHistory.push({ role: "model", content: responseText });
 
     return NextResponse.json({ text: responseText });
   } catch (error) {
