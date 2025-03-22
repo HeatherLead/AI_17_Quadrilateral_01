@@ -23,6 +23,8 @@ interface SpeechRecognition {
   start: () => void;
   stop: () => void;
   onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: () => void;
 }
 
 declare global {
@@ -97,6 +99,14 @@ export function AIVoiceInput({
     };
   }, [isDemo, demoInterval]);
 
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -136,14 +146,31 @@ export function AIVoiceInput({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         recognition.onresult = (event: any) => {
           let currentTranscript = "";
+          let finalTranscript = "";
+
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-              currentTranscript += transcript + " ";
+              finalTranscript += transcript + " ";
+            } else {
+              currentTranscript += transcript;
             }
           }
-          if (currentTranscript) {
-            onTranscript?.(currentTranscript);
+
+          if (finalTranscript) {
+            onTranscript?.(finalTranscript);
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.error("Speech recognition error:", event);
+          stopRecording();
+        };
+
+        recognition.onend = () => {
+          if (submitted) {
+            // If still submitted when recognition ends, it was interrupted
+            stopRecording();
           }
         };
 
