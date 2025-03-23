@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import axios from "axios";
 
 const API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
 const MODEL_ID = process.env.GOOGLE_GEMINI_MODEL_ID!;
@@ -35,9 +36,22 @@ export async function POST(req: Request) {
     chatHistory.push({ role: "user", content: prompt });
     chatHistory.push({ role: "model", content: responseText });
 
-    return NextResponse.json({ text: responseText });
+    const formatedResponse = convertToSteps(responseText);
+
+    const genProResponse = await axios.post("/api/gemini-pro", {
+      prompt: formatedResponse,
+    });
+
+    return NextResponse.json({ text: genProResponse.data.text });
   } catch (error) {
     console.log(error);
     return NextResponse.json({ error: error }, { status: 500 });
   }
 }
+
+const convertToSteps = (instruction: string) => {
+  return instruction
+    .split(" → ")
+    .map((step, index) => `${index + 1}. ${step}`)
+    .join("\n");
+};
