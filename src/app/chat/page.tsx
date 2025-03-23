@@ -40,14 +40,13 @@ interface Message {
 
 export default function AIVoiceInputDemo() {
   const [transcript, setTranscript] = useState("");
-  const [response, setResponse] = useState("");
+  // const [response, setResponse] = useState("");
   const [language, setLanguage] = useState<"en" | "hi" | "mr">("en");
   const [avatar, setAvatar] = useState<AvatarType>(Avatars[0]);
-  const [video, setVideo] = useState("/");
+  // const [video, setVideo] = useState("/");
   const [isRecording, setIsRecording] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
   const style = Styles.cheerful;
 
   const generateVideo = async (text: string) => {
@@ -60,7 +59,8 @@ export default function AIVoiceInputDemo() {
       });
       const { videoUrl } = videoResult.data;
       if (!videoUrl) throw new Error("No video URL received");
-      setVideo(videoUrl);
+      // setVideo(videoUrl);
+      // console.log(video)
       return videoUrl;
     } catch (error) {
       console.error("Error generating video:", error);
@@ -86,7 +86,6 @@ export default function AIVoiceInputDemo() {
       if (!text.trim()) return;
 
       setIsLoading(true);
-      setIsLoadingResponse(true);
       try {
         setMessages((prev) => [...prev, { role: "user", content: text }]);
 
@@ -109,7 +108,7 @@ export default function AIVoiceInputDemo() {
         }
 
         const aiResponse = res.data.text;
-        setResponse(aiResponse);
+        // setResponse(aiResponse);
 
         const videoUrl = await generateVideo(aiResponse);
 
@@ -124,10 +123,10 @@ export default function AIVoiceInputDemo() {
         ]);
 
         setTranscript("");
-        setVideo("/");
+        // setVideo("/");
       } catch (error) {
         console.error("Error fetching AI response:", error);
-        setResponse("Error generating response.");
+        // setResponse("Error generating response.");
         setMessages((prev) => [
           ...prev.filter((msg) => !msg.isLoading),
           {
@@ -138,7 +137,6 @@ export default function AIVoiceInputDemo() {
         ]);
       } finally {
         setIsLoading(false);
-        setIsLoadingResponse(false);
       }
     },
     [language, avatar]

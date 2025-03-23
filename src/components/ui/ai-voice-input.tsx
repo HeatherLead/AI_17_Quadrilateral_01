@@ -16,6 +16,11 @@ interface SpeechRecognitionEvent {
   results: SpeechRecognitionResult[];
 }
 
+interface SpeechRecognitionErrorEvent {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  error:any
+}
+
 interface SpeechRecognition {
   continuous: boolean;
   interimResults: boolean;
@@ -115,7 +120,7 @@ export function AIVoiceInput({
       .padStart(2, "0")}`;
   };
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (isDemo) {
       setIsDemo(false);
       setSubmitted(false);
@@ -123,7 +128,7 @@ export function AIVoiceInput({
       if (submitted) {
         stopRecording();
       } else {
-        startRecording();
+        await startRecording();
       }
     }
   };
@@ -145,15 +150,12 @@ export function AIVoiceInput({
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         recognition.onresult = (event: any) => {
-          let currentTranscript = "";
           let finalTranscript = "";
 
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
               finalTranscript += transcript + " ";
-            } else {
-              currentTranscript += transcript;
             }
           }
 
@@ -163,7 +165,8 @@ export function AIVoiceInput({
         };
 
         recognition.onerror = (event) => {
-          console.error("Speech recognition error:", event);
+          console.log("Speech recognition error:", event);
+          console.log(event);
           stopRecording();
         };
 
