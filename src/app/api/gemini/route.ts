@@ -39,7 +39,9 @@ export async function POST(req: Request) {
     );
     console.log(genProResponse, "genPro");
 
-    return NextResponse.json({ text: genProResponse.data.text });
+    const formattedGenProResponse = removeAsterisks(genProResponse.data.text);
+
+    return NextResponse.json({ text: formattedGenProResponse });
   } catch (error) {
     console.log(error);
     return NextResponse.json({ error: error }, { status: 500 });
@@ -51,4 +53,8 @@ const convertToSteps = (instruction: string) => {
     .split(" → ")
     .map((step, index) => `${index + 1}. ${step}`)
     .join("\n");
+};
+
+const removeAsterisks = (input: string) => {
+  return input.replace(/\*\*/g, "");
 };
