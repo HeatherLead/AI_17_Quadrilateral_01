@@ -109,15 +109,7 @@ export default function AIVoiceInputDemo() {
 
         const aiResponse = res.data.text;
         // setResponse(aiResponse);
-        const formatedResponse = convertToSteps(aiResponse);
-
-        const genRes = await axios.post("/api/gemini-pro", {
-          prompt: formatedResponse,
-        });
-
-        const mainResponse = genRes.data.text;
-
-        const videoUrl = await generateVideo(mainResponse);
+        const videoUrl = await generateVideo(aiResponse);
 
         setMessages((prev) => [
           ...prev.filter((msg) => !msg.isLoading),
@@ -311,10 +303,3 @@ export default function AIVoiceInputDemo() {
     </div>
   );
 }
-
-const convertToSteps = (instruction: string) => {
-  return instruction
-    .split(" → ")
-    .map((step, index) => `${index + 1}. ${step}`)
-    .join("\n");
-};
