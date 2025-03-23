@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
-const MODEL_ID = "tunedModels/erpqueriesfinetuning500-78yndkjw5iza";
-
+const MODEL_ID =
+  process.env.GOOGLE_GEMINI_ID 
 
 // Store chat history (Temporary: Use a database in production)
 const chatHistory: { role: "user" | "model"; content: string }[] = [];
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
 
     const genAI = new GoogleGenerativeAI(API_KEY as string);
-    const model = genAI.getGenerativeModel({ model: MODEL_ID });
+    const model = genAI.getGenerativeModel({ model: MODEL_ID as string });
 
     const messages = [...chatHistory, { role: "user", content: prompt }];
     console.log("1", messages);
