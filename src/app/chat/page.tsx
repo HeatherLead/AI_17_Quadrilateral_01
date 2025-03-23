@@ -35,7 +35,6 @@ interface Message {
   content: string;
   videoUrl?: string;
   isLoading?: boolean;
-  isVideoLoaded?: boolean;
 }
 
 export default function AIVoiceInputDemo() {
@@ -73,12 +72,9 @@ export default function AIVoiceInputDemo() {
     videoElement.play();
   };
 
-  const handleVideoLoad = (messageIndex: number) => {
-    setMessages((prev) =>
-      prev.map((msg, idx) =>
-        idx === messageIndex ? { ...msg, isVideoLoaded: true } : msg
-      )
-    );
+  const formatResponse = (text: string) => {
+    // Replace numbered points with line breaks
+    return text.replace(/(\d+\.)/g, "\n$1").trim();
   };
 
   const fetchAIResponse = useCallback(
@@ -87,15 +83,16 @@ export default function AIVoiceInputDemo() {
 
       setIsLoading(true);
       try {
+        // Add user message
         setMessages((prev) => [...prev, { role: "user", content: text }]);
 
+        // Add loading message
         setMessages((prev) => [
           ...prev,
           {
             role: "assistant",
             content: "Loading...",
             isLoading: true,
-            isVideoLoaded: false,
           },
         ]);
 
@@ -107,31 +104,30 @@ export default function AIVoiceInputDemo() {
           throw new Error("Invalid response from AI");
         }
 
-        const aiResponse = res.data.text;
-        // setResponse(aiResponse);
+        const aiResponse = formatResponse(res.data.text);
         const videoUrl = await generateVideo(aiResponse);
 
+        // Update with final message
         setMessages((prev) => [
           ...prev.filter((msg) => !msg.isLoading),
           {
             role: "assistant",
             content: aiResponse,
             videoUrl,
-            isVideoLoaded: false,
+            isLoading: false,
           },
         ]);
 
         setTranscript("");
-        // setVideo("/");
       } catch (error) {
         console.error("Error fetching AI response:", error);
-        // setResponse("Error generating response.");
         setMessages((prev) => [
           ...prev.filter((msg) => !msg.isLoading),
           {
             role: "assistant",
             content:
               "Sorry, there was an error generating the response. Please try again.",
+            isLoading: false,
           },
         ]);
       } finally {
@@ -175,40 +171,25 @@ export default function AIVoiceInputDemo() {
               message.role === "user" ? "justify-end" : "justify-start flex-col"
             }`}
           >
-            {message.role === "assistant" &&
-            (message.isLoading ||
-              (message.videoUrl && !message.isVideoLoaded)) ? (
+            {message.role === "assistant" && message.isLoading ? (
               <div className="flex items-center gap-2 bg-gray-950 rounded-lg p-4">
                 <LoaderCircle className="w-5 h-5 animate-spin" />
-                <span className="text-sm">
-                  {message.isLoading
-                    ? "Generating response..."
-                    : "Loading video..."}
-                </span>
+                <span className="text-sm">Generating response...</span>
               </div>
             ) : (
               <>
                 {message.videoUrl && (
                   <div className="mb-2">
-                    <Suspense
-                      fallback={
-                        <div>
-                          <LoaderCircle className="w-20 h-20 text-white animate-spin" />
-                        </div>
-                      }
-                    >
-                      <video
-                        className="ml-4 w-36 h-36 object-cover rounded-full cursor-pointer"
-                        src={message.videoUrl}
-                        autoPlay
-                        onClick={(e) => handleVideoClick(e.currentTarget)}
-                        onLoadedData={() => handleVideoLoad(index)}
-                        onError={(e) => {
-                          console.error("Video playback error:", e);
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    </Suspense>
+                    <video
+                      className="ml-4 w-36 h-36 object-cover rounded-full cursor-pointer"
+                      src={message.videoUrl}
+                      autoPlay
+                      onClick={(e) => handleVideoClick(e.currentTarget)}
+                      onError={(e) => {
+                        console.error("Video playback error:", e);
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
                   </div>
                 )}
                 <div
@@ -218,7 +199,9 @@ export default function AIVoiceInputDemo() {
                       : "bg-gray-950 mr-4"
                   }`}
                 >
-                  <div className="text-sm">{message.content}</div>
+                  <div className="text-sm whitespace-pre-line">
+                    {message.content}
+                  </div>
                 </div>
               </>
             )}
