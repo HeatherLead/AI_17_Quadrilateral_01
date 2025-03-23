@@ -17,7 +17,7 @@ export function Header() {
   return (
     <header className="border-b relative">
       <div className="flex h-16 items-center px-4 container mx-auto justify-between">
-        <Link href="/home" className="flex items-center">
+        <Link href="/" className="flex items-center">
           <div className="font-bold text-xl">Kekio</div>
         </Link>
 

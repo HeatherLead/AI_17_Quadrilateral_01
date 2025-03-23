@@ -3,8 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import axios from "axios";
 
 const API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
-const MODEL_ID = process.env.GOOGLE_GEMINI_MODEL_ID!;
-
+const MODEL_ID = "tunedModels/idmsinfotecherp-felf1vlm8k4p";
 
 // Store chat history (Temporary: Use a database in production)
 const chatHistory: { role: "user" | "model"; content: string }[] = [];
@@ -19,28 +18,26 @@ export async function POST(req: Request) {
     const model = genAI.getGenerativeModel({ model: MODEL_ID as string });
 
     const messages = [...chatHistory, { role: "user", content: prompt }];
-    console.log("1", messages);
-
     const result = await model.generateContent({
       contents: messages.map((m) => ({
         role: m.role,
         parts: [{ text: m.content }],
       })),
     });
-    console.log(result, "2");
-
     const responseText = result.response.text();
-    console.log(responseText, "3");
-
     // Update chat history
     chatHistory.push({ role: "user", content: prompt });
     chatHistory.push({ role: "model", content: responseText });
 
     const formatedResponse = convertToSteps(responseText);
-
-    const genProResponse = await axios.post("/api/gemini-pro", {
-      prompt: formatedResponse,
-    });
+    console.log(formatedResponse, "formattt");
+    const genProResponse = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/gemini-pro`,
+      {
+        prompt: formatedResponse,
+      }
+    );
+    console.log(genProResponse, "genPro");
 
     return NextResponse.json({ text: genProResponse.data.text });
   } catch (error) {
