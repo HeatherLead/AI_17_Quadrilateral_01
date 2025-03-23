@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
 
     const genAI = new GoogleGenerativeAI(API_KEY as string);
-    const model = genAI.getGenerativeModel({ model: MODEL_ID });
+    const model = genAI.getGenerativeModel({ model: MODEL_ID as string });
 
     const messages = [...chatHistory, { role: "user", content: prompt }];
     console.log("1", messages);
