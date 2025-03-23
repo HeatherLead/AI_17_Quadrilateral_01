@@ -17,6 +17,7 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
+import { LoaderCircle } from "lucide-react";
 
 interface AvatarType {
   id: number;
@@ -29,6 +30,14 @@ interface AvatarType {
   };
 }
 
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+  videoUrl?: string;
+  isLoading?: boolean;
+  isVideoLoaded?: boolean;
+}
+
 export default function AIVoiceInputDemo() {
   const [transcript, setTranscript] = useState("");
   const [response, setResponse] = useState("");
@@ -36,6 +45,9 @@ export default function AIVoiceInputDemo() {
   const [avatar, setAvatar] = useState<AvatarType>(Avatars[0]);
   const [video, setVideo] = useState("/");
   const [isRecording, setIsRecording] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
   const style = Styles.cheerful;
 
   const generateVideo = async (text: string) => {
@@ -47,24 +59,86 @@ export default function AIVoiceInputDemo() {
         language: avatar.voices[language],
       });
       const { videoUrl } = videoResult.data;
+      if (!videoUrl) throw new Error("No video URL received");
       setVideo(videoUrl);
+      return videoUrl;
     } catch (error) {
       console.error("Error generating video:", error);
+      return null;
     }
+  };
+
+  const handleVideoClick = (videoElement: HTMLVideoElement) => {
+    videoElement.currentTime = 0;
+    videoElement.play();
+  };
+
+  const handleVideoLoad = (messageIndex: number) => {
+    setMessages((prev) =>
+      prev.map((msg, idx) =>
+        idx === messageIndex ? { ...msg, isVideoLoaded: true } : msg
+      )
+    );
   };
 
   const fetchAIResponse = useCallback(
     async (text: string) => {
+      if (!text.trim()) return;
+
+      setIsLoading(true);
+      setIsLoadingResponse(true);
       try {
+        setMessages((prev) => [...prev, { role: "user", content: text }]);
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Loading...",
+            isLoading: true,
+            isVideoLoaded: false,
+          },
+        ]);
+
         const res = await axios.post("/api/gemini", {
           prompt: text,
         });
+
+        if (!res.data || !res.data.text) {
+          throw new Error("Invalid response from AI");
+        }
+
         const aiResponse = res.data.text;
         setResponse(aiResponse);
-        await generateVideo(aiResponse);
+
+        const videoUrl = await generateVideo(aiResponse);
+
+        setMessages((prev) => [
+          ...prev.filter((msg) => !msg.isLoading),
+          {
+            role: "assistant",
+            content: aiResponse,
+            videoUrl,
+            isVideoLoaded: false,
+          },
+        ]);
+
+        setTranscript("");
+        setVideo("/");
       } catch (error) {
         console.error("Error fetching AI response:", error);
         setResponse("Error generating response.");
+        setMessages((prev) => [
+          ...prev.filter((msg) => !msg.isLoading),
+          {
+            role: "assistant",
+            content:
+              "Sorry, there was an error generating the response. Please try again.",
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+        setIsLoadingResponse(false);
       }
     },
     [language, avatar]
@@ -94,128 +168,140 @@ export default function AIVoiceInputDemo() {
   }, [isRecording]);
 
   return (
-    <div className="h-[calc(100vh-120px)] p-8 flex flex-col items-center justify-center gap-5">
-      {/** Avatar Output */}
-      <div
-        className={`absolute z-10 left-8 top-24 flex gap-10 items-start 
-          transition-opacity duration-1000 ease-in-out ${
-            response ? "opacity-100" : "opacity-0"
-          }`}
-      >
-        <div>
-          <Suspense
-            fallback={
-              <div className="w-44 h-44 border rounded-full border-gray-500 dark:border-white animate-pulse">
-                Loading...
-              </div>
-            }
-          >
-            <div className="w-44 h-44 border rounded-full border-gray-500 dark:border-white">
-              <video
-                className="w-44 h-44 object-cover rounded-full"
-                src={video}
-                autoPlay
-              />
-            </div>
-          </Suspense>
-        </div>
-        <div className="relative flex items-center justify-center">
+    <div className="h-[calc(100vh-120px)] mx-20 p-4 flex flex-row-reverse justify-center gap-20">
+      {/* Chat History */}
+      <div className="flex-1 max-w-[40rem] overflow-y-auto mb-4 space-y-4">
+        {messages.map((message, index) => (
           <div
-            className="relative p-5 text-sm max-w-xs md:max-w-md lg:max-w-lg 
-          border border-gray-300 font-medium shadow-lg 
-          rounded-3xl px-6 py-4 transition-opacity duration-500 ease-in-out
-          before:content-[''] before:absolute before:w-10 before:h-10 before:bg-white 
-          before:rounded-full before:border before:border-gray-300 
-          before:bottom-[-10px] before:left-[-5%]
-          after:content-[''] after:absolute after:w-6 after:h-6 after:bg-white 
-          after:rounded-full after:border after:border-gray-300 
-          after:bottom-[-20px] after:left-[-10%]"
+            key={`message-${index}-${message.role}`}
+            className={`flex ${
+              message.role === "user" ? "justify-end" : "justify-start flex-col"
+            }`}
           >
-            {response}
+            {message.role === "assistant" &&
+            (message.isLoading ||
+              (message.videoUrl && !message.isVideoLoaded)) ? (
+              <div className="flex items-center gap-2 bg-gray-950 rounded-lg p-4">
+                <LoaderCircle className="w-5 h-5 animate-spin" />
+                <span className="text-sm">
+                  {message.isLoading
+                    ? "Generating response..."
+                    : "Loading video..."}
+                </span>
+              </div>
+            ) : (
+              <>
+                {message.videoUrl && (
+                  <div className="mb-2">
+                    <Suspense
+                      fallback={
+                        <div>
+                          <LoaderCircle className="w-20 h-20 text-white animate-spin" />
+                        </div>
+                      }
+                    >
+                      <video
+                        className="ml-4 w-36 h-36 object-cover rounded-full cursor-pointer"
+                        src={message.videoUrl}
+                        autoPlay
+                        onClick={(e) => handleVideoClick(e.currentTarget)}
+                        onLoadedData={() => handleVideoLoad(index)}
+                        onError={(e) => {
+                          console.error("Video playback error:", e);
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    </Suspense>
+                  </div>
+                )}
+                <div
+                  className={`max-w-[60%] text-wrap rounded-lg p-2 flex-col ${
+                    message.role === "user"
+                      ? "bg-[#8B3DFF] text-gray-100 ml-4"
+                      : "bg-gray-950 mr-4"
+                  }`}
+                >
+                  <div className="text-sm">{message.content}</div>
+                </div>
+              </>
+            )}
           </div>
-        </div>
+        ))}
       </div>
 
-      <div className="absolute right-4 top-20">
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Avatar>
-              <AvatarImage
-                className="w-10 h-10 rounded-full object-cover"
-                src={avatar.image}
-              />
-              <AvatarFallback>{avatar.name[0].toUpperCase()}</AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Avatar settings</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+      {/* Input Area */}
+      <div className="flex flex-col justify-center items-center gap-5  mb-8 ">
+        <div className="">
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Avatar>
+                <AvatarImage
+                  className="w-40 h-40 rounded-full object-cover"
+                  src={avatar.image}
+                />
+                <AvatarFallback>{avatar.name[0].toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Avatar settings</DropdownMenuLabel>
+              <DropdownMenuSeparator />
 
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Avatar</DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {Avatars.map((av) => (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Avatar</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {Avatars.map((av) => (
+                    <DropdownMenuItem
+                      className={
+                        avatar.name === av.name ? "bg-gray-800 font-bold" : ""
+                      }
+                      key={av.id}
+                      onClick={() => setAvatar(av)}
+                    >
+                      {av.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Language</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    className={
-                      avatar.name === av.name ? "bg-gray-800 font-bold" : ""
-                    }
-                    key={av.id}
-                    onClick={() => setAvatar(av)}
+                    onClick={() => setLanguage("en")}
+                    className={language === "en" ? "bg-gray-800 font-bold" : ""}
                   >
-                    {av.name}
+                    English
                   </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Language</DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem
-                  onClick={() => setLanguage("en")}
-                  className={language === "en" ? "bg-gray-800 font-bold" : ""}
-                >
-                  English
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setLanguage("mr")}
-                  className={language === "mr" ? "bg-gray-800 font-bold" : ""}
-                >
-                  Marathi
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setLanguage("hi")}
-                  className={language === "hi" ? "bg-gray-800 font-bold" : ""}
-                >
-                  Hindi
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="space-y-4">
-        <AIVoiceInput
-          onTranscript={(text) => handleTranscript(text, isRecording)}
-        />
-        <Input
-          className="w-80"
-          placeholder="What's on your mind?"
-          value={transcript}
-          onChange={(e) => setTranscript(e.target.value)}
-          onKeyDown={handleKeyPress}
-        />
-      </div>
-      <div className="w-full p-4 border rounded-lg">
-        <p className="text-gray-700 font-semibold">🎙 Transcript:</p>
-        <p className="text-blue-500">{transcript || "Start speaking..."}</p>
-      </div>
-      <div className="w-full p-4 border rounded-lg">
-        <p className="text-gray-700 font-semibold">🤖 AI Response:</p>
-        <p className="text-green-500">
-          {response || "Waiting for response..."}
-        </p>
+                  <DropdownMenuItem
+                    onClick={() => setLanguage("mr")}
+                    className={language === "mr" ? "bg-gray-800 font-bold" : ""}
+                  >
+                    Marathi
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setLanguage("hi")}
+                    className={language === "hi" ? "bg-gray-800 font-bold" : ""}
+                  >
+                    Hindi
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="flex justify-center items-center flex-col">
+          <AIVoiceInput
+            onTranscript={(text) => handleTranscript(text, isRecording)}
+          />
+          <Input
+            className="w-80"
+            placeholder="What's on your mind?"
+            value={transcript}
+            onChange={(e) => setTranscript(e.target.value)}
+            onKeyDown={handleKeyPress}
+            disabled={isLoading}
+          />
+        </div>
       </div>
     </div>
   );

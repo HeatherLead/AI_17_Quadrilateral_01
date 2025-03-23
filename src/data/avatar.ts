@@ -12,7 +12,7 @@ export const Avatars : Avatar[] = [
     {
         id: 1,
         name: "ananya",
-        image: "https://res.cloudinary.com/heatherlead/image/upload/v1742641320/on4n4nma5nkvsigjjry1.png",
+        image: "https://res.cloudinary.com/heatherlead/image/upload/v1742641320/ft6muoalremyzvtz7epg.png",
         voices: {
             en: "en-IN-AnanyaNeural",
             hi: "hi-IN-AnanyaNeural",

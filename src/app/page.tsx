@@ -1,17 +1,8 @@
 "use client";
-import { useEffect } from "react";
 import Spline from "@splinetool/react-spline";
 import { Suspense } from "react";
-import { useAuth } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
 
 export default function RootPage() {
-  const userId = useAuth();
-  useEffect(() => {
-    if (userId) {
-      redirect("/chat");
-    }
-  }, []);
   return (
     <main className="flex min-h-screen overflow-x-hidden  flex-col items-center justify-between bg-black">
       <Suspense fallback={<div className="text-white">Loading...</div>}>
